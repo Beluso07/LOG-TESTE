@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>LOG SENAI-SP - Sistema Logístico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Poppins',sans-serif}</style>
+</head>
+<body class="bg-gradient-to-br from-blue-800 via-blue-500 to-white min-h-screen p-6">
+
+<div class="max-w-7xl mx-auto">
+
+  <div class="mb-8 text-center">
+    <h1 class="text-5xl font-bold text-white">🚛 LOG SENAI-SP</h1>
+    <p class="text-blue-100">Gestão Logística • Empresa Brasileira 🇧🇷 • Contato: logsenai.sp@email.com</p>
+  </div>
+
+  <div id="alerta" class="hidden mb-4 p-4 rounded-xl bg-blue-100 text-blue-800"></div>
+  <div id="obsTemp" class="hidden mb-4 p-4 rounded-xl bg-blue-50 text-blue-700"></div>
+
+  <div class="bg-white p-6 rounded-2xl shadow-xl mb-6">
+    <div class="grid md:grid-cols-4 gap-4">
+
+      <select id="tipo" class="p-3 border rounded-xl">
+        <option value="">Tipo transporte</option>
+        <option>Rodoviário</option>
+        <option>Marítimo</option>
+        <option>Aéreo</option>
+        <option>Ferroviário</option>
+      </select>
+
+      <select id="carga" class="p-3 border rounded-xl" onchange="mostrarObservacaoTemp()">
+        <option value="">Tipo de carga</option>
+        <option>Perecível</option>
+        <option>Refrigerada</option>
+        <option>Congelada</option>
+        <option>Seca</option>
+        <option>Frágil</option>
+        <option>Perigosa</option>
+        <option>Carga Viva</option>
+        <option>Alto Valor</option>
+      </select>
+
+      <input id="distancia" type="number" class="p-3 border rounded-xl" placeholder="Distância km">
+      <input id="custo" type="number" class="p-3 border rounded-xl" placeholder="Custo">
+      <input id="tempo" type="number" class="p-3 border rounded-xl" placeholder="Tempo dias">
+      <input id="capacidade" type="number" class="p-3 border rounded-xl" placeholder="Capacidade kg">
+
+      <select id="status" class="p-3 border rounded-xl">
+        <option>Em rota</option>
+        <option>Entregue</option>
+        <option>Atrasado</option>
+      </select>
+    </div>
+
+    <button onclick="adicionar()" class="mt-4 bg-blue-600 text-white px-6 py-3 rounded-xl w-full">Adicionar</button>
+  </div>
+
+  <div class="bg-white p-6 rounded-2xl shadow-xl">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b">
+          <th>Tipo</th><th>Carga</th><th>Status</th><th>Score</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="tabela"></tbody>
+    </table>
+  </div>
+
+  <div class="bg-white p-6 rounded-2xl shadow-xl mt-6 text-center">
+    <button onclick="calcularMelhor()" class="bg-blue-600 text-white px-6 py-2 rounded-xl">Calcular Melhor</button>
+    <p id="resultado" class="mt-4 text-lg font-bold"></p>
+  </div>
+
+</div>
+
+<script>
+let transportes = JSON.parse(localStorage.getItem('dados')) || [];
+
+function salvar(){ localStorage.setItem('dados', JSON.stringify(transportes)); }
+
+function mostrarAlerta(msg){
+  const el=document.getElementById('alerta');
+  el.innerText=msg; el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'),3000);
+}
+
+function mostrarObservacaoTemp(){
+  const cargaSel=document.getElementById('carga').value;
+  const obs=document.getElementById('obsTemp');
+  let msg='';
+
+  if(cargaSel==='Perecível') msg='Manter entre 0°C e 10°C';
+  if(cargaSel==='Refrigerada') msg='2°C a 8°C';
+  if(cargaSel==='Congelada') msg='Abaixo de 0°C';
+  if(cargaSel==='Carga Viva') msg='Evitar extremos e garantir ventilação';
+
+  if(msg){ obs.innerText='⚠️ '+msg; obs.classList.remove('hidden'); }
+  else{ obs.classList.add('hidden'); }
+}
+
+function score(t){
+  let base=(t.custo||0)+(t.tempo||0)+((t.distancia||0)/100);
+  if(t.status==='Atrasado') base+=20;
+  return base;
+}
+
+function validarInteligente(t){
+  if(t.custo<=0){ mostrarAlerta('Custo inválido'); return false; }
+  if(t.tempo<=0){ mostrarAlerta('Tempo inválido'); return false; }
+  return true;
+}
+
+function adicionar(){
+  const t={
+    tipo:tipo.value,
+    carga:carga.value,
+    distancia:+distancia.value,
+    custo:+custo.value,
+    tempo:+tempo.value,
+    capacidade:+capacidade.value,
+    status:status.value
+  };
+
+  if(!t.tipo||!t.carga){ mostrarAlerta('Preencha os dados'); return; }
+  if(!validarInteligente(t)) return;
+
+  transportes.push(t);
+  salvar();
+  render();
+}
+
+function remover(i){ transportes.splice(i,1); salvar(); render(); }
+
+function render(){
+  const tb=document.getElementById('tabela'); tb.innerHTML='';
+  transportes.forEach((t,i)=>{
+    tb.innerHTML+=`<tr class="border-b">
+      <td>${t.tipo}</td>
+      <td>${t.carga}</td>
+      <td>${t.status}</td>
+      <td>${score(t).toFixed(2)}</td>
+      <td><button onclick="remover(${i})" class="bg-red-500 text-white px-2 py-1 rounded">❌</button></td>
+    </tr>`;
+  });
+}
+
+function calcularMelhor(){
+  if(transportes.length===0){ mostrarAlerta('Nenhum transporte'); return; }
+
+  const boxC=parseFloat(prompt('Comprimento carga (m):'));
+  const boxL=parseFloat(prompt('Largura carga (m):'));
+  const boxA=parseFloat(prompt('Altura carga (m):'));
+  const peso=parseFloat(prompt('Peso carga (kg):'));
+
+  const truckC=parseFloat(prompt('Comprimento caminhão (m):'));
+  const truckL=parseFloat(prompt('Largura caminhão (m):'));
+  const truckA=parseFloat(prompt('Altura caminhão (m):'));
+
+  const valorKg=parseFloat(prompt('Valor por KG (R$):'));
+  const valorM3=parseFloat(prompt('Valor por m³ (R$):'));
+
+  if(!boxC||!boxL||!boxA||!peso||!truckC||!truckL||!truckA||!valorKg||!valorM3){
+    resultado.innerText='Dados incompletos'; return;
+  }
+
+  let melhor=transportes[0];
+  transportes.forEach(t=>{ if(score(t)<score(melhor)) melhor=t; });
+
+  const volCaixa=boxC*boxL*boxA;
+  const volTruck=truckC*truckL*truckA;
+  const pesoCubico=volCaixa*300;
+
+  // Cálculo profissional de frete
+  const baseCalculo = Math.max(peso, pesoCubico);
+  const fretePesoReal = baseCalculo * valorKg;
+  const freteVolume = volCaixa * valorM3;
+
+  const freteFinal = Math.max(fretePesoReal, freteVolume);
+
+  let qtdVolume=Math.floor(truckC/boxC)*Math.floor(truckL/boxL)*Math.floor(truckA/boxA);
+  let qtdPeso=Math.floor((melhor.capacidade||0)/peso);
+  let qtdFinal=Math.min(qtdVolume,qtdPeso);
+
+  if(melhor.carga==='Carga Viva') qtdFinal=Math.floor(qtdFinal*0.7);
+
+  resultado.innerText=`🚛 ${melhor.tipo}\n\n📦 Volume carga: ${volCaixa.toFixed(2)} m³\n🚛 Volume caminhão: ${volTruck.toFixed(2)} m³\n\n⚖️ Peso real: ${peso} kg\n📊 Peso cúbico: ${pesoCubico.toFixed(2)} kg\n\n💰 Frete final: R$ ${freteFinal.toFixed(2)}\n\n📦 Capacidade: ${qtdFinal}`;
+}
+
+render();
+</script>
+</body>
+</html>
