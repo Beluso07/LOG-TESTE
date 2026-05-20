@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOG SENAI-SP</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-800">
+
+<!-- HEADER -->
+<header class="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-4">
+  <div class="flex flex-col gap-1">
+    <h1 class="text-xl font-bold">LOG SENAI-SP</h1>
+    <p class="text-xs opacity-90">Sistema Inteligente de Logística</p>
+    <span class="text-xs opacity-80">contato@logsenai.sp</span>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="max-w-7xl mx-auto p-3 grid grid-cols-1 gap-4">
+
+  <!-- DASHBOARD -->
+  <div class="grid grid-cols-2 gap-3">
+
+    <div class="bg-white p-3 rounded-xl shadow">
+      <p class="text-xs">Transportes</p>
+      <p id="totalTransportes" class="text-lg font-bold">0</p>
+    </div>
+
+    <div class="bg-white p-3 rounded-xl shadow">
+      <p class="text-xs">Em rota</p>
+      <p id="emRota" class="text-lg font-bold">0</p>
+    </div>
+
+    <div class="bg-white p-3 rounded-xl shadow">
+      <p class="text-xs">Eficiência</p>
+      <p id="eficiencia" class="text-lg font-bold">0%</p>
+    </div>
+
+    <div class="bg-white p-3 rounded-xl shadow">
+      <p class="text-xs">Ocupação</p>
+      <p id="ocupacao" class="text-lg font-bold">0%</p>
+    </div>
+
+  </div>
+
+  <!-- AÇÕES -->
+  <div class="bg-white p-4 rounded-xl shadow">
+    <button onclick="abrirModal()" class="w-full bg-blue-600 text-white py-3 rounded-lg">
+      + Adicionar Transporte
+    </button>
+  </div>
+
+  <!-- LISTA -->
+  <div class="bg-white p-4 rounded-xl shadow">
+    <h2 class="font-bold mb-2">Transportes</h2>
+    <div id="lista" class="space-y-2 max-h-60 overflow-auto"></div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="bg-white p-4 rounded-xl shadow h-72">
+    <h2 class="font-bold mb-2">Ocupação da Frota</h2>
+    <canvas id="grafico"></canvas>
+  </div>
+
+</main>
+
+<!-- MODAL MOBILE -->
+<div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-end md:items-center justify-center">
+
+  <div class="bg-white w-full md:w-96 p-4 rounded-t-2xl md:rounded-xl max-h-[90vh] overflow-auto">
+
+    <h2 class="text-lg font-bold mb-3">Cadastro</h2>
+
+    <div class="space-y-2">
+
+      <select id="tipoTransporte" class="w-full border p-2 rounded">
+        <option>Rodoviário</option>
+        <option>Marítimo</option>
+        <option>Aéreo</option>
+        <option>Ferroviário</option>
+      </select>
+
+      <input id="distancia" placeholder="Distância (km)" class="w-full border p-2 rounded">
+      <input id="peso" placeholder="Peso (kg)" class="w-full border p-2 rounded">
+      <input id="volume" placeholder="Volume (m³)" class="w-full border p-2 rounded">
+
+      <select id="tipoCarga" class="w-full border p-2 rounded">
+        <option>Perecível</option>
+        <option>Refrigerada</option>
+        <option>Congelada</option>
+        <option>Seca</option>
+        <option>Frágil</option>
+        <option>Perigosa</option>
+        <option>Carga Viva</option>
+        <option>Alto Valor</option>
+      </select>
+
+      <input id="precoKm" placeholder="Preço km" class="w-full border p-2 rounded">
+      <input id="freteMinimo" placeholder="Frete mínimo" class="w-full border p-2 rounded">
+      <input id="tempo" placeholder="Tempo (h)" class="w-full border p-2 rounded">
+
+      <button onclick="adicionar()" class="w-full bg-green-600 text-white py-3 rounded-lg">
+        Salvar
+      </button>
+
+      <button onclick="fecharModal()" class="w-full text-red-500">
+        Cancelar
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let transportes = [];
+let grafico;
+
+function abrirModal(){ document.getElementById("modal").classList.remove("hidden"); }
+function fecharModal(){ document.getElementById("modal").classList.add("hidden"); }
+
+function calcularFrete(t){
+  const base = t.distancia * t.precoKm + t.peso * 0.8;
+  return Math.max(base, t.freteMinimo);
+}
+
+function adicionar(){
+
+  const t = {
+    tipoTransporte: tipoTransporte.value,
+    distancia: +distancia.value,
+    peso: +peso.value,
+    volume: +volume.value,
+    tipo: tipoCarga.value,
+    precoKm: +precoKm.value,
+    freteMinimo: +freteMinimo.value,
+    tempo: +tempo.value,
+    status: "Em rota"
+  };
+
+  transportes.push(t);
+  fecharModal();
+  atualizar();
+}
+
+function atualizar(){
+
+  let lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  let emRota = 0;
+
+  transportes.forEach((t,i)=>{
+
+    if(t.status === "Em rota") emRota++;
+
+    lista.innerHTML += `
+      <div class="border p-2 rounded flex justify-between">
+        <div>
+          <p class="font-bold">${t.tipoTransporte}</p>
+          <p class="text-xs">${t.tipo} - ${t.distancia} km</p>
+        </div>
+        <div class="text-right">
+          <p class="font-bold">R$ ${calcularFrete(t).toFixed(2)}</p>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById("totalTransportes").innerText = transportes.length;
+  document.getElementById("emRota").innerText = emRota;
+  document.getElementById("eficiencia").innerText = transportes.length ? Math.round((emRota/transportes.length)*100) + "%" : "0%";
+  document.getElementById("ocupacao").innerText = "OK";
+
+  atualizarGrafico();
+}
+
+function atualizarGrafico(){
+
+  const ctx = document.getElementById("grafico");
+
+  const dados = { Rodoviário:0, Marítimo:0, Aéreo:0, Ferroviário:0 };
+
+  transportes.forEach(t=>{
+    if(dados[t.tipoTransporte] !== undefined){
+      dados[t.tipoTransporte]++;
+    }
+  });
+
+  if(grafico) grafico.destroy();
+
+  grafico = new Chart(ctx,{
+    type:"doughnut",
+    data:{
+      labels:Object.keys(dados),
+      datasets:[{ data:Object.values(dados) }]
+    }
+  });
+}
+
+atualizar();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOG SENAI-SP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-800">
+
+<header class="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-4 md:p-6 shadow-lg">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+    <div>
+      <h1 class="text-xl md:text-2xl font-bold">LOG SENAI-SP</h1>
+      <p class="text-xs md:text-sm opacity-90">Sistema Inteligente de Logística</p>
+    </div>
+    <div class="text-xs md:text-sm opacity-90">contato@logsenai.sp</div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto p-3 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+
+  <!-- DASHBOARD -->
+  <div class="col-span-1 md:col-span-3 grid grid-cols-2 md:grid-cols-6 gap-3">
+
+    <div class="bg-white rounded-xl shadow-md p-3 md:p-5">
+      <p class="text-xs text-slate-500">Transportes</p>
+      <p id="totalTransportes" class="text-lg md:text-2xl font-bold">0</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-3 md:p-5">
+      <p class="text-xs text-slate-500">Em rota</p>
+      <p id="emRota" class="text-lg md:text-2xl font-bold">0</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-3 md:p-5">
+      <p class="text-xs text-slate-500">Eficiência</p>
+      <p id="eficiencia" class="text-lg md:text-2xl font-bold">0%</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-3 md:p-5">
+      <p class="text-xs text-slate-500">Cap. Volume</p>
+      <p id="capVolume" class="text-lg md:text-2xl font-bold">0 m³</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-3 md:p-5">
+      <p class="text-xs text-slate-500">Uso Volume</p>
+      <p id="usoVolume" class="text-lg md:text-2xl font-bold">0 m³</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-3 md:p-5">
+      <p class="text-xs text-slate-500">Ocupação</p>
+      <p id="ocupacao" class="text-lg md:text-2xl font-bold">0%</p>
+    </div>
+
+  </div>
+
+  <!-- AÇÕES -->
+  <div class="bg-white rounded-xl shadow-md p-4">
+    <h2 class="font-semibold mb-3">Ações</h2>
+    <button onclick="abrirModal()" 
+      class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-sm md:text-base">
+      + Adicionar Transporte
+    </button>
+  </div>
+
+  <!-- LISTA -->
+  <div class="bg-white rounded-xl shadow-md p-4 md:col-span-2">
+    <h2 class="font-semibold mb-3">Transportes</h2>
+    <div id="lista" class="space-y-3 max-h-[300px] md:max-h-none overflow-auto"></div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="bg-white rounded-xl shadow-md p-4 col-span-1 md:col-span-3 h-[280px] md:h-[350px]">
+    <h2 class="font-semibold mb-3">Ocupação da Frota</h2>
+    <canvas id="grafico"></canvas>
+  </div>
+
+</main>
+
+<!-- MODAL MOBILE FULL SCREEN -->
+<div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-end md:items-center justify-center">
+
+  <div class="bg-white p-4 md:p-6 rounded-t-2xl md:rounded-xl shadow-xl w-full md:w-96 max-h-[90vh] overflow-auto">
+
+    <h2 class="text-lg font-bold mb-4">Cadastro de Transporte</h2>
+
+    <select id="tipoTransporte" class="w-full border rounded-lg p-2 mb-2">
+      <option>Rodoviário</option>
+      <option>Marítimo</option>
+      <option>Aéreo</option>
+      <option>Ferroviário</option>
+    </select>
+
+    <input id="distancia" placeholder="Distância (km)" class="w-full border rounded-lg p-2 mb-2" />
+    <input id="peso" placeholder="Peso (kg)" class="w-full border rounded-lg p-2 mb-2" />
+    <input id="volume" placeholder="Volume (m³)" class="w-full border rounded-lg p-2 mb-2" />
+
+    <select id="tipoCarga" class="w-full border rounded-lg p-2 mb-2">
+      <option>Perecível</option>
+      <option>Refrigerada</option>
+      <option>Congelada</option>
+      <option>Seca</option>
+      <option>Frágil</option>
+      <option>Perigosa</option>
+      <option>Carga Viva</option>
+      <option>Alto Valor</option>
+    </select>
+
+    <input id="precoKm" placeholder="Preço por km (R$)" class="w-full border rounded-lg p-2 mb-2" />
+    <input id="freteMinimo" placeholder="Frete mínimo (R$)" class="w-full border rounded-lg p-2 mb-2" />
+    <input id="tempo" placeholder="Tempo (h)" class="w-full border rounded-lg p-2 mb-4" />
+
+    <button onclick="adicionar()" class="w-full bg-green-600 text-white py-3 rounded-lg">
+      Salvar
+    </button>
+
+    <button onclick="fecharModal()" class="w-full mt-2 text-red-500">
+      Cancelar
+    </button>
+
+  </div>
+</div>
