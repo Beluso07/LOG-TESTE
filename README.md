@@ -1,11 +1,30 @@
+# TransJund Site
 
-  # One Page Transport Website
+Site institucional da TransJund feito com Vite, React e TypeScript.
 
-  This is a code bundle for One Page Transport Website. The original project is available at https://www.figma.com/design/195XXDSndBb7RB6Mn2N9E3/One-Page-Transport-Website.
+## Requisitos
 
-  ## Running the code
+- Node.js 20 ou superior
+- npm 10 ou superior
 
-  Run `npm i` to install the dependencies.
+## Como rodar
 
-  Run `npm run dev` to start the development server.
-  
+```bash
+npm install
+npm run dev
+```
+
+## Comandos
+
+```bash
+npm run dev
+npm run build
+npm run preview
+npm run typecheck
+```
+
+## Observacoes
+
+- O formulario de cotacao ainda simula o envio no navegador.
+- Atualize os telefones, WhatsApp e e-mail antes de publicar o site.
+- A pasta `dist/` e `node_modules/` nao devem ser versionadas.
